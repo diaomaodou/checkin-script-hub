@@ -28,21 +28,14 @@ QL Script Hub 是一个专为青龙面板打造的综合性脚本库，提供签
 ql-script-hub/
 ├── README.md              # 项目说明文档
 ├── LICENSE                # 开源许可证
-├── aliyunpan_signin.py    # 阿里云盘签到脚本
-├── baidu_signin.py        # 百度网盘签到
-├── enshan_checkin.py      # 恩山论坛签到脚本
-├── nodeseek_checkin.py    # nodeseek签到脚本
-├── ikuuu_checkin.py       # ikuuu签到
-├── nga_checkin.py         # NGA论坛签到
-├── ty_netdisk_checkin.py  # 天翼云盘签到
+├── aliyunpan_checkin.py   # 阿里云盘签到脚本
+├── baiduwangpan_checkin.py # 百度网盘签到
 ├── quark_signin.py        # 夸克网盘签到脚本
-├── CDRail.py              # 成都地铁签到脚本
-├── SFSU_checkin.py        # 顺丰速运签到脚本
-├── smzdm_checkin.py       # 什么值得买签到脚本
-├── deepflood_checkin.py   # deepflood签到脚本
-├── leaflow_checkin.py     # leaflow签到脚本
-├── tieba_checkin.py       # 贴吧签到脚本
-└── tsthb_checkin.py       # 塔斯汀汉堡签到脚本
+├── ty_netdisk_checkin.py  # 天翼云盘签到
+├── passnat_checkin.py     # PassNAT签到脚本
+├── tsthb_checkin.py       # 塔斯汀汉堡签到脚本
+└── archive/               # 已归档脚本（不再维护）
+    └── leaflow_checkin.py # leaflow签到脚本
 ```
 
 ## 🚀 快速开始
@@ -74,65 +67,11 @@ ql-script-hub/
 | `DD_BOT_SECRET`   | 钉钉机器人密钥      | 可选     | `xxxxxxxxxxxxxxxxxx`                             | 钉钉群机器人密钥（可选）          |
 | `BARK_PUSH`       | Bark推送地址        | 可选     | `https://api.day.app/your_key/`                  | iOS Bark推送                      |
 
-#### 🏔️ 恩山论坛签到配置
-
-| 变量名            | 说明           | 是否必需       | 示例值                 | 备注         |
-| ----------------- | -------------- | -------------- | ---------------------- | ------------ |
-| `enshan_cookie` | 恩山论坛Cookie | **必需** | `完整的Cookie字符串` | 单账号Cookie |
-
-#### 📱 NodeSeek 签到配置
-
-| 变量名              | 说明               | 是否必需       | 示例值                      | 备注                 |
-| ------------------- | ------------------ | -------------- | --------------------------- | -------------------- |
-| `NODESEEK_COOKIE` | NodeSeek网站Cookie | **必需** | `cookie1&cookie2&cookie3` | 多账号用 `&`分隔   |
-| `NS_RANDOM`       | 签到随机参数       | 可选           | `true`                    | 默认值，通常无需修改 |
-
 #### ☁️ 夸克网盘签到配置
 
 | 变量名           | 说明           | 是否必需       | 示例值               | 备注                      |
 | ---------------- | -------------- | -------------- | -------------------- | ------------------------- |
 | `QUARK_COOKIE` | 夸克网盘Cookie | **必需** | `cookie1&&cookie2` | 多账号用 `&&`或回车分隔 |
-
-#### 🚇 成都地铁签到配置
-
-| 变量名          | 说明                                    | 是否必需       | 示例值                                               | 备注                                                                              |
-| --------------- | --------------------------------------- | -------------- | ---------------------------------------------------- | --------------------------------------------------------------------------------- |
-| `CDRAIL_DATA` | 成都地铁请求数据（从抓包 headers 提取） | **必需** | `{"token":"xxx","app-token":"yyy","Cookie":"zzz"}` | 支持 `JSON` 或 `token=...&app-token=...&cookie=...`；多账号用换行或 `@`分隔 |
-
-`CDRAIL_DATA` 需要包含的字段（建议直接从抓包请求头复制/提取）：
-
-| 字段                         | 是否必需       | 说明                                                       |
-| ---------------------------- | -------------- | ---------------------------------------------------------- |
-| `token`                    | **必需** | 请求头里的 `token`                                       |
-| `app-token`                | **必需** | 请求头里的 `app-token`                                   |
-| `Cookie` / `cookie`      | **必需** | 登录后的 Cookie（脚本会自动兼容大小写）                    |
-| `deviceId` / `device-id` | 建议           | 设备标识；仓库内默认值为占位符，推荐用你自己抓包到的设备ID |
-
-格式示例：
-
-```bash
-# JSON 单账号（推荐）
-export CDRAIL_DATA='{"token":"xxx","app-token":"yyy","Cookie":"zzz","deviceId":"xxx-xxx"}'
-
-# querystring 单账号
-export CDRAIL_DATA='token=xxx&app-token=yyy&cookie=zzz&deviceId=xxx-xxx'
-
-# 多账号：换行 或 @ 分割
-export CDRAIL_DATA='{"token":"t1","app-token":"a1","Cookie":"c1","deviceId":"d1"}
-{"token":"t2","app-token":"a2","Cookie":"c2","deviceId":"d2"}'
-```
-
-#### 📦 顺丰速运签到配置
-
-| 变量名      | 说明            | 是否必需       | 示例值                  | 备注                 |
-| ----------- | --------------- | -------------- | ----------------------- | -------------------- |
-| `sfsyUrl` | 顺丰速运登录URL | **必需** | `https://mcs-mimp...` | 抓包获取，多账号换行 |
-
-#### 百度贴吧签到配置
-
-| 变量名           | 说明           | 是否必需       | 示例值                            | 备注                           |
-| ---------------- | -------------- | -------------- | --------------------------------- | ------------------------------ |
-| `TIEBA_COOKIE` | 百度贴吧Cookie | **必需** | `BDUSS=xxxxxx; STOKEN=xxxxx...` | 完整的Cookie字符串，多账号换行 |
 
 #### ☁️ 阿里云盘签到配置
 
@@ -142,24 +81,11 @@ export CDRAIL_DATA='{"token":"t1","app-token":"a1","Cookie":"c1","deviceId":"d1"
 | `AUTO_UPDATE_TOKEN`    | 自动更新Token         | 可选           | `true`                    | 默认 `true`，自动维护token    |
 | `PRIVACY_MODE`         | 隐私保护模式          | 可选           | `true`                    | 默认 `true`，脱敏显示敏感信息 |
 
-#### 🛒 什么值得买签到配置
-
-| 变量名           | 说明             | 是否必需       | 示例值                                  | 备注                       |
-| ---------------- | ---------------- | -------------- | --------------------------------------- | -------------------------- |
-| `SMZDM_COOKIE` | 什么值得买Cookie | **必需** | `__ckguid==xxxxx; device_id=xxxxx...` | 完整Cookie，多账号换行分隔 |
-
 #### 🍔 塔斯汀汉堡签到配置
 
 | 变量名           | 说明             | 是否必需       | 示例值                      | 备注                       |
 | ---------------- | ---------------- | -------------- | --------------------------- | -------------------------- |
 | `tsthbck` | 塔斯汀汉堡user-token | **必需** | `xxxxx` | 微信小程序抓包获取，多账号用换行分隔 |
-
-#### 🎶 HiFiTi签到配置
-
-| 变量名           | 说明             | 是否必需       | 示例值                      | 备注                       |
-| ---------------- | ---------------- | -------------- | --------------------------- | -------------------------- |
-| `HiFiTi_COOKIE` | HiFiTi 的 Cookie | **可选** | `xxxxx` | 支持多账号，换行分隔 |
-| `HIFIHI_COOKIE` | HiFiHi 的 Cookie | **可选** | `xxxxx` | 支持多账号，换行分隔 |
 
 #### ☁️ 百度网盘配置
 
@@ -168,38 +94,12 @@ export CDRAIL_DATA='{"token":"t1","app-token":"a1","Cookie":"c1","deviceId":"d1"
 | `BAIDU_COOKIE` | 网站Cookie | `BDUSS=xxx; STOKEN=xxx...` |
 | `PRIVACY_MODE` | 隐私模式   | `true`                     |
 
-#### 📡 ikuuu签到配置
-
-| 变量名           | 说明     | 示例                 |
-| ---------------- | -------- | -------------------- |
-| `IKUUU_EMAIL`  | 登录邮箱 | `user@example.com` |
-| `IKUUU_PASSWD` | 登录密码 | `password123`      |
-
 #### ☁️ 天翼云盘配置
 
 | 变量名          | 说明       | 示例                        | 备注       |
 | --------------- | ---------- | --------------------------- | ---------- |
 | `TY_USERNAME` | 登录手机号 | `13812345678\n13987654321` | 多账号换行 |
 | `TY_PASSWORD` | 登录密码   | `password1\npassword2`     |            |
-
-#### 🎮 NGA论坛配置
-
-| 变量名              | 说明            | 示例                   |
-| ------------------- | --------------- | ---------------------- |
-| `NGA_CREDENTIALS` | UID,AccessToken | `12345678,abcdef...` |
-
-#### 📱 deepflood签到配置
-
-| 变量名 | 说明 | 是否必需 | 示例值 | 备注 |
-|--------|------|----------|--------|------|
-| `DEEPFLOOD_COOKIE` | DEEPFLOOD网站Cookie | **必需** | `cookie1&cookie2&cookie3` | 多账号用`&`分隔 |
-| `NS_RANDOM` | 签到随机参数 | 可选 | `true` | 默认值，通常无需修改 |
-
-#### ☁ leaflow签到配置
-
-| 变量名             | 说明              | 是否必需       | 示例值     | 备注               |
-| ------------------ | ----------------- | -------------- | ---------- | ------------------ |
-| `LEAFLOW_COOKIE` | leaflow网站Cookie | **必需** | `cookie` | 多账号用换行分隔 |
 
 #### 🌐 PassNAT签到配置
 
@@ -226,43 +126,11 @@ export CDRAIL_DATA='{"token":"t1","app-token":"a1","Cookie":"c1","deviceId":"d1"
 
 ### 🍪 Cookie获取方式
 
-#### 恩山论坛 Cookie
-
-1. 浏览器访问 [恩山论坛](https://www.right.com.cn/FORUM/) 并登录
-2. F12 开发者工具 → Network → 刷新页面
-3. 找到请求头中的 `Cookie` 完整复制
-
-#### NodeSeek Cookie
-
-1. 浏览器访问 [nodeseek.com](https://www.nodeseek.com) 并登录
-2. F12 开发者工具 → Network → 刷新页面
-3. 找到请求头中的 `Cookie` 完整复制
-
-#### Deepflood Cookie
-1. 浏览器访问 [deepflood.com](https://www.deepflood.com) 并登录
-2. F12 开发者工具 → Network → 刷新页面
-3. 找到请求头中的 `Cookie` 完整复制
-
 #### 夸克网盘 Cookie
 
 1. 浏览器访问 [夸克网盘](https://pan.quark.cn/) 并登录
 2. F12 开发者工具 → Network → 刷新页面
 3. 找到请求头中的 `Cookie` 完整复制
-
-#### 顺丰速运 sfsyUrl
-
-1. 顺丰APP绑定微信后，添加机器人发送"顺丰"
-2. 打开小程序或APP-我的-积分，抓包以下URL之一:
-   - `https://mcs-mimp-web.sf-express.com/mcs-mimp/share/weChat/shareGiftReceiveRedirect`
-   - `https://mcs-mimp-web.sf-express.com/mcs-mimp/share/app/shareRedirect`
-3. 抓取URL后，使用 [URL编码工具](https://www.toolhelper.cn/EncodeDecode/Url) 进行编码
-
-#### 百度贴吧 Cookie
-
-1. 浏览器访问 [tieba.baidu.com](https://tieba.baidu.com) 并登录
-2. F12 开发者工具 → Network → 刷新页面
-3. 找到请求头中的完整 `Cookie` 复制
-4. 确保包含 `BDUSS` 参数
 
 #### 阿里云盘 refresh_token
 
@@ -271,39 +139,16 @@ export CDRAIL_DATA='{"token":"t1","app-token":"a1","Cookie":"c1","deviceId":"d1"
 3. 左侧找到 `Local Storage` → `https://www.aliyundrive.com`
 4. 找到 `token` 项，复制 `refresh_token` 的值
 
-#### 什么值得买 Cookie
-
-1. 浏览器访问 [什么值得买](https://www.smzdm.com/) 并登录
-2. 按 `F12` 打开开发者工具 → `Network` 标签页
-3. 刷新页面，找到任意请求的 `Request Headers`
-4. 复制完整的 `Cookie` 值
-
 #### 百度网盘 Cookie
 
 1. 访问 [百度网盘](https://pan.baidu.com/) 登录
 2. F12 → Network → 复制Cookie
-
-#### Ikuuu 配置
-
-1. 在青龙面板中添加环境变量IKUUU_EMAIL（邮箱地址）
-2. 在青龙面板中添加环境变量IKUUU_PASSWD（对应密码）
-3. 多账号用英文逗号分隔: email1,email2
-4. 密码顺序要与邮箱顺序对应
 
 #### 天翼云盘配置
 
 1. 浏览器访问 [天翼云盘](https://e.dlife.cn/index.do) ，关闭设备锁
 2. 在青龙面板中添加环境变量TY_USERNAME（手机号）
 3. 在青龙面板中添加环境变量TY_PASSWD（对应密码）
-
-#### leaflow配置
-
-1. 浏览器访问 [leaflow](https://leaflow.net/workspaces) ，关闭设备锁
-2. 点击签到试用
-3. 在新弹出来的页面中按F12 网络
-4. 点击签到
-5. 观察F12 网络中新出现的链接
-6. 在新出现的请求中找到cookie值为PHPSESSID=XXXXX的一串
 
 #### PassNAT 接口密钥获取
 
@@ -312,23 +157,6 @@ export CDRAIL_DATA='{"token":"t1","app-token":"a1","Cookie":"c1","deviceId":"d1"
 3. 点击 **生成密钥** 或复制已有的密钥
 4. 将获取到的 `SK_xxxxx` 格式的密钥填入环境变量
 5. 多账号用户可生成多个密钥，换行分隔填写
-
----
-
-#### NGA论坛配置
-
-1. 安装抓包工具并开启 HTTPS 解密，安装并信任证书 Android：HTTP Canary、HttpToolkit、mitmproxy、Charles; iOS：Stream、Charles
-2. 将手机的网络代理指向抓包工具（或使用工具的本机 VPN/代理模式）
-3. 打开 NGA 官方 App，确保已登录；在 App 内随便执行一个操作（进入首页/签到等）触发请求
-4. 在抓包记录中找到对以下地址的 POST 请求： https://ngabbs.com/nuke.php
-5. 打开该请求的请求体（Content-Type 一般是 application/x-www-form-urlencoded），复制以下参数的值：access_uid=你的UID;access_token=一串长字符串
-6. 将上述两者按"UID,AccessToken"格式填写为环境变量 NGA_CREDENTIALS
-   单账号示例：123456,abcdefg
-   多账号用换行分隔：
-   ```
-   123456,abcdefg
-   234567,hijklmn
-   ```
 
 ---
 

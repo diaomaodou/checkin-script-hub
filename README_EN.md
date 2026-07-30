@@ -31,19 +31,12 @@ ql-script-hub/
 ├── LICENSE                      # License
 ├── aliyunpan_checkin.py         # Aliyun Drive check-in
 ├── baiduwangpan_checkin.py      # Baidu Netdisk check-in
-├── deepflood_checkin.py         # Deepflood check-in
-├── enshan_checkin.py            # Enshan forum check-in
-├── ikuuu_checkin.py             # Ikuuu check-in
-├── nga_checkin.py               # NGA forum check-in
-├── nodeseek_checkin.py          # NodeSeek check-in
 ├── quark_signin.py              # Quark Drive sign-in
-├── CDRail.py                    # Chengdu Metro sign-in
-├── SFSU_checkin.py              # SF Express sign-in
-├── SMZDM_checkin.py             # SMZDM sign-in
-├── tieba_checkin.py             # Baidu Tieba sign-in
 ├── ty_netdisk_checkin.py        # Tianyi Cloud Drive sign-in
-└── archive/
-    └── leaflow_checkin.pyleaflow_checkin.py
+├── passnat_checkin.py           # PassNAT sign-in
+├── tsthb_checkin.py             # Tastien Burger sign-in
+└── archive/                     # Archived scripts (no longer maintained)
+    └── leaflow_checkin.py       # Leaflow sign-in
 ```
 
 ## 🚀 Quick Start
@@ -76,65 +69,11 @@ ql-script-hub/
 | `DD_BOT_SECRET` | DingTalk bot secret | Optional | `xxxxxxxxxxxxxxxxxx` | Optional bot signing secret |
 | `BARK_PUSH` | Bark push URL | Optional | `https://api.day.app/your_key/` | Bark push for iOS |
 
-#### 🏔️ Enshan Forum
-
-| Variable | Description | Required | Example | Notes |
-|--------|------|----------|--------|------|
-| `enshan_cookie` | Enshan forum cookie | **Required** | `full cookie string` | Single-account cookie |
-
-#### 📱 NodeSeek
-
-| Variable | Description | Required | Example | Notes |
-|--------|------|----------|--------|------|
-| `NODESEEK_COOKIE` | NodeSeek cookie | **Required** | `cookie1\ncookie2\ncookie3` | Separate multiple accounts with new lines |
-| `NS_RANDOM` | Random sign-in parameter | Optional | `true` | Usually no need to change |
-
 #### ☁️ Quark Drive
 
 | Variable | Description | Required | Example | Notes |
 |--------|------|----------|--------|------|
 | `QUARK_COOKIE` | Quark Drive cookie | **Required** | `cookie1\ncookie2` | Separate multiple accounts with new lines |
-
-#### 🚇 Chengdu Metro
-
-| Variable | Description | Required | Example | Notes |
-|--------|------|----------|--------|------|
-| `CDRAIL_DATA` | Chengdu Metro request data extracted from captured headers | **Required** | `{"token":"xxx","app-token":"yyy","Cookie":"zzz"}` | Supports `JSON`; separate multiple accounts with new lines |
-
-`CDRAIL_DATA` should include the following fields, preferably copied directly from the captured request headers:
-
-| Field | Required | Description |
-|------|----------|------|
-| `token` | **Required** | The `token` value from request headers |
-| `app-token` | **Required** | The `app-token` value from request headers |
-| `Cookie` / `cookie` | **Required** | Logged-in cookie; the script handles case differences automatically |
-| `deviceId` / `device-id` | Recommended | Device identifier; the repository default is only a placeholder, so using your own captured device ID is recommended |
-
-Example formats:
-
-```bash
-# Single account in JSON format (recommended)
-export CDRAIL_DATA='{"token":"xxx","app-token":"yyy","Cookie":"zzz","deviceId":"xxx-xxx"}'
-
-# Single account in querystring format
-export CDRAIL_DATA='token=xxx&app-token=yyy&cookie=zzz&deviceId=xxx-xxx'
-
-# Multiple accounts: separated by new lines or `@`
-export CDRAIL_DATA='{"token":"t1","app-token":"a1","Cookie":"c1","deviceId":"d1"}
-{"token":"t2","app-token":"a2","Cookie":"c2","deviceId":"d2"}'
-```
-
-#### 📦 SF Express
-
-| Variable | Description | Required | Example | Notes |
-|--------|------|----------|--------|------|
-| `sfsyUrl` | SF Express login URL | **Required** | `https://mcs-mimp...` | Capture from network traffic, one per line for multiple accounts |
-
-#### Baidu Tieba
-
-| Variable | Description | Required | Example | Notes |
-|--------|------|----------|--------|------|
-| `TIEBA_COOKIE` | Baidu Tieba cookie | **Required** | `BDUSS=xxxxxx; STOKEN=xxxxx...` | Full cookie string, one account per line |
 
 #### ☁️ Aliyun Drive
 
@@ -144,11 +83,11 @@ export CDRAIL_DATA='{"token":"t1","app-token":"a1","Cookie":"c1","deviceId":"d1"
 | `AUTO_UPDATE_TOKEN` | Auto update token | Optional | `true` | Default is `true` |
 | `PRIVACY_MODE` | Privacy mode | Optional | `true` | Default is `true`, masks sensitive values |
 
-#### 🛒 SMZDM
+#### 🍔 Tastien Burger
 
 | Variable | Description | Required | Example | Notes |
 |--------|------|----------|--------|------|
-| `SMZDM_COOKIE` | SMZDM cookie | **Required** | `__ckguid==xxxxx; device_id=xxxxx...` | Full cookie string, one account per line |
+| `tsthbck` | Tastien Burger `user-token` | **Required** | `xxxxx` | Captured from the WeChat mini program, one account per line |
 
 #### ☁️ Baidu Netdisk
 
@@ -157,13 +96,6 @@ export CDRAIL_DATA='{"token":"t1","app-token":"a1","Cookie":"c1","deviceId":"d1"
 | `BAIDU_COOKIE` | Website cookie | `BDUSS=xxx; STOKEN=xxx...` |
 | `PRIVACY_MODE` | Privacy mode | `true` |
 
-#### 📡 Ikuuu
-
-| Variable | Description | Example |
-|--------|------|------|
-| `IKUUU_EMAIL` | Login email | `user@example.com` |
-| `IKUUU_PASSWD` | Login password | `password123` |
-
 #### ☁️ Tianyi Cloud Drive
 
 | Variable | Description | Example |
@@ -171,24 +103,11 @@ export CDRAIL_DATA='{"token":"t1","app-token":"a1","Cookie":"c1","deviceId":"d1"
 | `TY_USERNAME` | Login phone number | `13812345678` |
 | `TY_PASSWORD` | Login password | `password1` |
 
-#### 🎮 NGA Forum
-
-| Variable | Description | Example |
-|--------|------|------|
-| `NGA_CREDENTIALS` | UID and AccessToken | `12345678,abcdef...` |
-
-#### 📱 Deepflood
+#### 🌐 PassNAT
 
 | Variable | Description | Required | Example | Notes |
 |--------|------|----------|--------|------|
-| `DEEPFLOOD_COOKIE` | Deepflood website cookie | **Required** | `cookie1\ncookie2\ncookie3` | Separate multiple accounts with new lines |
-| `NS_RANDOM` | Random sign-in parameter | Optional | `true` | Usually no need to change |
-
-#### ☁️ Leaflow
-
-| Variable | Description | Required | Example | Notes |
-|--------|------|----------|--------|------|
-| `LEAFLOW_COOKIE` | Leaflow website cookie | **Required** | `cookie` | Separate multiple accounts with new lines |
+| `PASSNAT_SK` | PassNAT API key | **Required** | `sk_xxxxx` | Separate multiple accounts with new lines |
 
 #### ⏰ Randomization Settings (shared by all scripts)
 
@@ -208,38 +127,10 @@ export CDRAIL_DATA='{"token":"t1","app-token":"a1","Cookie":"c1","deviceId":"d1"
 
 ### 🍪 Cookie / Credential Collection
 
-#### Enshan forum cookie
-1. Visit [Enshan Forum](https://www.right.com.cn/FORUM/) and sign in
-2. Open developer tools with `F12` → `Network` → refresh the page
-3. Copy the full `Cookie` value from request headers
-
-#### NodeSeek cookie
-1. Visit [nodeseek.com](https://www.nodeseek.com) and sign in
-2. Open developer tools with `F12` → `Network` → refresh the page
-3. Copy the full `Cookie` value from request headers
-
-#### Deepflood cookie
-1. Visit [deepflood.com](https://www.deepflood.com) and sign in
-2. Open developer tools with `F12` → `Network` → refresh the page
-3. Copy the full `Cookie` value from request headers
-
 #### Quark Drive cookie
 1. Visit [Quark Drive](https://pan.quark.cn/) and sign in
 2. Open developer tools with `F12` → `Network` → refresh the page
 3. Copy the full `Cookie` value from request headers
-
-#### SF Express `sfsyUrl`
-1. Bind WeChat in the SF Express app, then send "顺丰" to the bot
-2. Open the mini program or app → My → Points, and capture one of these URLs:
-   - `https://mcs-mimp-web.sf-express.com/mcs-mimp/share/weChat/shareGiftReceiveRedirect`
-   - `https://mcs-mimp-web.sf-express.com/mcs-mimp/share/app/shareRedirect`
-3. Encode the captured URL using a tool such as [URL Encoder](https://www.toolhelper.cn/EncodeDecode/Url)
-
-#### Baidu Tieba cookie
-1. Visit [tieba.baidu.com](https://tieba.baidu.com) and sign in
-2. Open developer tools with `F12` → `Network` → refresh the page
-3. Copy the full `Cookie` value from request headers
-4. Make sure the cookie contains `BDUSS`
 
 #### Aliyun Drive `refresh_token`
 1. Visit [Aliyun Drive Web](https://www.aliyundrive.com/) and sign in
@@ -247,44 +138,21 @@ export CDRAIL_DATA='{"token":"t1","app-token":"a1","Cookie":"c1","deviceId":"d1"
 3. Find `Local Storage` → `https://www.aliyundrive.com`
 4. Locate `token` and copy the `refresh_token` value
 
-#### SMZDM cookie
-1. Visit [SMZDM](https://www.smzdm.com/) and sign in
-2. Press `F12` → open the `Network` tab
-3. Refresh the page and open any request's `Request Headers`
-4. Copy the full `Cookie` value
-
 #### Baidu Netdisk cookie
 1. Visit [Baidu Netdisk](https://pan.baidu.com/) and sign in
 2. Press `F12` → `Network` → copy the cookie
-
-#### Ikuuu configuration
-1. Add `IKUUU_EMAIL` in QingLong Panel
-2. Add `IKUUU_PASSWD` in QingLong Panel
-3. Separate multiple accounts with commas, e.g. `email1,email2`
-4. Keep password order aligned with email order
 
 #### Tianyi Cloud Drive configuration
 1. Visit [Tianyi Cloud Drive](https://e.dlife.cn/index.do) and disable device lock
 2. Add `TY_USERNAME` in QingLong Panel
 3. Add `TY_PASSWD` in QingLong Panel
 
-#### Leaflow configuration
-1. Visit [leaflow](https://leaflow.net/workspaces) and disable device lock
-2. Click the trial sign-in entry
-3. Open developer tools with `F12` and go to the network panel
-4. Click sign in
-5. Inspect the newly generated request
-6. Find the cookie value containing `PHPSESSID=XXXXX`
-
-#### NGA forum configuration
-1. Install a packet capture tool with HTTPS decryption enabled and trust its certificate. Android: HTTP Canary, HttpToolkit, mitmproxy, Charles; iOS: Stream, Charles
-2. Route the phone network through the capture tool (or use its local VPN / proxy mode)
-3. Open the official NGA app, make sure you are signed in, then perform any action to trigger a request
-4. Find the POST request sent to `https://ngabbs.com/nuke.php`
-5. Open the request body (`Content-Type` is usually `application/x-www-form-urlencoded`) and copy: `access_uid=yourUID` and `access_token=long_string`
-6. Combine them as `UID,AccessToken` and store them in `NGA_CREDENTIALS`
-   - Single account: `123456,abcdefg`
-   - Multiple accounts: `123456,abcdefg&234567,hijklmn`
+#### PassNAT API key
+1. Visit [PassNAT](https://www.passnat.com/) and sign in
+2. Go to **Account Center** → **API Keys**
+3. Click **Generate Key** or copy an existing key
+4. Fill the `SK_xxxxx`-formatted key into the environment variable
+5. For multiple accounts, generate multiple keys and separate them with new lines
 
 ---
 
