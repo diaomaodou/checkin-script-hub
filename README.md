@@ -32,6 +32,7 @@ ql-script-hub/
 ├── baiduwangpan_checkin.py # 百度网盘签到
 ├── quark_signin.py        # 夸克网盘签到脚本
 ├── ty_netdisk_checkin.py  # 天翼云盘签到
+├── caiyun_checkin.py      # 移动云盘(和彩云)签到脚本
 ├── passnat_checkin.py     # PassNAT签到脚本
 ├── tsthb_checkin.py       # 塔斯汀汉堡签到脚本
 └── archive/               # 已归档脚本（不再维护）
@@ -101,6 +102,13 @@ ql-script-hub/
 | `TY_USERNAME` | 登录手机号 | `13812345678\n13987654321` | 多账号换行 |
 | `TY_PASSWORD` | 登录密码   | `password1\npassword2`     |            |
 
+#### ☁️ 移动云盘 / 和彩云签到配置
+
+| 变量名         | 说明                  | 是否必需       | 示例值                 | 备注                          |
+| -------------- | --------------------- | -------------- | ---------------------- | ----------------------------- |
+| `CAIYUN_PHONE` | 移动云盘手机号        | **必需** | `13800138000`          | 多账号用换行分隔              |
+| `CAIYUN_AUTH`  | Authorization 令牌    | **必需** | `Basic cGM6MTM4...`    | 浏览器抓包获取，见下方说明    |
+
 #### 🌐 PassNAT签到配置
 
 | 变量名           | 说明             | 是否必需       | 示例值                      | 备注                       |
@@ -149,6 +157,18 @@ ql-script-hub/
 1. 浏览器访问 [天翼云盘](https://e.dlife.cn/index.do) ，关闭设备锁
 2. 在青龙面板中添加环境变量TY_USERNAME（手机号）
 3. 在青龙面板中添加环境变量TY_PASSWD（对应密码）
+
+#### 移动云盘 Authorization 获取
+
+1. 浏览器访问 [移动云盘](https://yun.139.com/) 并登录
+2. 按 `F12` 打开开发者工具 → `Network` 标签页
+3. 在云盘页面进行任意操作（如刷新文件列表）
+4. 找到任意发往 `yun.139.com` 或 `*.yun.139.com` 的请求
+5. 复制请求头中 `Authorization: Basic <...>` 的完整值（包含 `Basic ` 前缀）
+6. 填入 `CAIYUN_AUTH` 环境变量，同时将登录手机号填入 `CAIYUN_PHONE`
+7. 多账号用户换行分隔多个手机号和对应令牌
+
+> 💡 详细图文教程可参考 [AList 官方文档](https://alist.nn.ci/zh/guide/drivers/139.html)（令牌通常约 30 天过期，过期后需重新抓取）
 
 #### PassNAT 接口密钥获取
 

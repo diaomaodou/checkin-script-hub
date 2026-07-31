@@ -33,6 +33,7 @@ ql-script-hub/
 ├── baiduwangpan_checkin.py      # Baidu Netdisk check-in
 ├── quark_signin.py              # Quark Drive sign-in
 ├── ty_netdisk_checkin.py        # Tianyi Cloud Drive sign-in
+├── caiyun_checkin.py            # China Mobile Cloud Drive (Caiyun) sign-in
 ├── passnat_checkin.py           # PassNAT sign-in
 ├── tsthb_checkin.py             # Tastien Burger sign-in
 └── archive/                     # Archived scripts (no longer maintained)
@@ -103,6 +104,13 @@ ql-script-hub/
 | `TY_USERNAME` | Login phone number | `13812345678` |
 | `TY_PASSWORD` | Login password | `password1` |
 
+#### ☁️ China Mobile Cloud Drive (Caiyun / 139 Cloud)
+
+| Variable | Description | Required | Example | Notes |
+|--------|------|----------|--------|------|
+| `CAIYUN_PHONE` | Caiyun phone number | **Required** | `13800138000` | Separate multiple accounts with new lines |
+| `CAIYUN_AUTH` | Authorization token | **Required** | `Basic cGM6MTM4...` | Captured from browser DevTools, see below |
+
 #### 🌐 PassNAT
 
 | Variable | Description | Required | Example | Notes |
@@ -146,6 +154,17 @@ ql-script-hub/
 1. Visit [Tianyi Cloud Drive](https://e.dlife.cn/index.do) and disable device lock
 2. Add `TY_USERNAME` in QingLong Panel
 3. Add `TY_PASSWD` in QingLong Panel
+
+#### Caiyun Authorization token
+1. Visit [China Mobile Cloud Drive](https://yun.139.com/) and sign in
+2. Press `F12` → open the `Network` tab
+3. Perform any action on the drive page (e.g. refresh the file list)
+4. Find any request sent to `yun.139.com` or `*.yun.139.com`
+5. Copy the full `Authorization: Basic <...>` header value (including the `Basic ` prefix)
+6. Put it in `CAIYUN_AUTH`, and put the login phone number in `CAIYUN_PHONE`
+7. For multiple accounts, separate phones and tokens with new lines
+
+> 💡 Illustrated guide: [AList documentation](https://alist.nn.ci/zh/guide/drivers/139.html) (the token typically expires after ~30 days; re-capture when it does)
 
 #### PassNAT API key
 1. Visit [PassNAT](https://www.passnat.com/) and sign in
