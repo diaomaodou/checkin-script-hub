@@ -106,7 +106,6 @@ class Quark:
 
     def __init__(self, cookie):
         self.cookie = cookie.strip()
-        self.nickname = ""
         # 从 cookie 中提取移动端反爬参数 kps/sign/vcode
         self.mparam = self._match_mparam_from_cookie(self.cookie)
 
@@ -125,20 +124,6 @@ class Quark:
             }
         return mparam
 
-    def get_account_info(self):
-        url = "https://pan.quark.cn/account/info"
-        querystring = {"fr": "pc", "platform": "pc"}
-        headers = {
-            "content-type": "application/json",
-            "user-agent": self.USER_AGENT,
-            "cookie": self.cookie,
-        }
-        response = requests.get(url=url, headers=headers, params=querystring).json()
-        if response.get("data"):
-            return response["data"]
-        else:
-            return False
-
     def get_growth_info(self):
         url = f"{self.BASE_URL_APP}/1/clouddrive/capacity/growth/info"
         querystring = {
@@ -153,7 +138,10 @@ class Quark:
             "user-agent": self.USER_AGENT,
             "cookie": self.cookie,
         }
-        response = requests.get(url=url, headers=headers, params=querystring).json()
+        try:
+            response = requests.get(url=url, headers=headers, params=querystring).json()
+        except Exception as e:
+            return False, f"网络错误: {e}"
         if response.get("data"):
             return True, response["data"]
         else:
@@ -174,7 +162,10 @@ class Quark:
             "user-agent": self.USER_AGENT,
             "cookie": self.cookie,
         }
-        response = requests.post(url=url, json=payload, headers=headers, params=querystring).json()
+        try:
+            response = requests.post(url=url, json=payload, headers=headers, params=querystring).json()
+        except Exception as e:
+            return False, f"网络错误: {e}"
         if response.get("data"):
             return True, response["data"]["sign_daily_reward"]
         else:
@@ -188,19 +179,13 @@ class Quark:
             msg += "    需从夸克APP或移动端网页(m.quark.cn)抓包获取含kps/sign/vcode的cookie\n"
             return msg
 
-        # 验证账号
-        account_info = self.get_account_info()
-        if not account_info:
-            msg += " ❌ 该账号登录失败，cookie无效\n"
-            return msg
-
-        self.nickname = account_info.get("nickname", "")
-        msg += f" 昵称: {self.nickname}\n"
-
-        # 每日领空间
+        # 每日领空间（移动端接口，兼作账号有效性校验，返回 401 即登录失效）
         ok, growth_info = self.get_growth_info()
         if not ok:
-            msg += f"❌ 获取签到状态失败：{growth_info}\n"
+            if "401" in str(growth_info) or "require login" in str(growth_info).lower():
+                msg += " ❌ 该账号登录失败，cookie无效或已失效，请重新抓包\n"
+            else:
+                msg += f"❌ 获取签到状态失败：{growth_info}\n"
             return msg
 
         member_type = VIP_MAP.get(
