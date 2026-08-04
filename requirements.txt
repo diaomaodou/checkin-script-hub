@@ -1,0 +1,4 @@
+requests
+# 改进版免费代理库（fork）：ip2region 本地离线定位 + 找到可用即停
+# 境外 VPS / GitHub Actions 等海外 IP 被国内服务 WAF 拦截时使用，境内直连无需安装
+git+https://github.com/LeapYa/freeproxy.git@master

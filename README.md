@@ -28,6 +28,8 @@ QL Script Hub 是一个专为青龙面板打造的综合性脚本库，提供签
 ql-script-hub/
 ├── README.md              # 项目说明文档
 ├── LICENSE                # 开源许可证
+├── requirements.txt       # Python 依赖（境外 VPS 跑塔斯汀签到需安装）
+├── freeproxy_helper.py    # 国内免费代理统一工具（境外 VPS 绕 WAF，可复用）
 ├── aliyunpan_checkin.py   # 阿里云盘签到脚本
 ├── baiduwangpan_checkin.py # 百度网盘签到
 ├── quark_signin.py        # 夸克网盘签到脚本
@@ -87,6 +89,20 @@ ql-script-hub/
 | 变量名           | 说明             | 是否必需       | 示例值                      | 备注                       |
 | ---------------- | ---------------- | -------------- | --------------------------- | -------------------------- |
 | `tsthbck` | 塔斯汀汉堡user-token | **必需** | `xxxxx` | 微信小程序抓包获取，多账号用换行分隔 |
+| `USE_CN_PROXY` | 国内代理模式 | 可选 | `auto` | 境外 VPS 推荐 `always`，详见下方说明 |
+
+> **🌐 境外 VPS / GitHub Actions 用户必读**
+>
+> 塔斯汀 API 使用阿里云 WAF，会拦截海外 IP。在境外机器上运行需启用国内代理回退：
+>
+> 1. 安装代理依赖：`pip install -r requirements.txt`（境内直连无需安装）
+> 2. 设置 `USE_CN_PROXY` 环境变量：
+>    - `auto`（默认）：先直连，遇 WAF 自动切换国内代理（境内机器零依赖可用）
+>    - `always`：跳过直连，直接走代理（境外 VPS 推荐，省一次失败请求）
+>    - `off`：禁用代理
+> 3. 验证代理可用：`python freeproxy_helper.py`（自检模式，几秒内应输出"可用代理 N 个"）
+>
+> 代理来源：改进版 [freeproxy fork](https://github.com/LeapYa/freeproxy)，ip2region 本地离线定位 + 找到可用即停，秒级完成。代理模块 `freeproxy_helper.py` 已封装为通用组件，其他签到脚本可直接 import 复用。
 
 #### ☁️ 百度网盘配置
 
