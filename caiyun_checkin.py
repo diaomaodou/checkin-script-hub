@@ -28,6 +28,17 @@ try:
 except ImportError:
     print("⚠️  未加载通知模块，跳过通知功能")
 
+# 共享代理工具：境外 VPS 无法连通 139 服务时自动切换国内免费代理
+try:
+    from freeproxy_helper import ProxiedRequestSession
+    _has_proxy_helper = True
+except ImportError:
+    _has_proxy_helper = False
+    print("⚠️  未加载 freeproxy_helper 模块，境外 VPS 上可能无法连接 139 服务（境内直连不受影响）")
+
+# 代理模式：auto(默认，先直连遇网络错误/WAF再回退) / always(境外VPS推荐，直接走代理) / off
+proxy_mode = os.getenv("USE_CN_PROXY", "auto").lower()
+
 # 随机延迟配置
 max_random_delay = int(os.getenv("MAX_RANDOM_DELAY", "3600"))
 random_signin = os.getenv("RANDOM_SIGNIN", "true").lower() == "true"
@@ -120,6 +131,22 @@ DEFAULT_UA = (
 )
 
 
+_proxied_session = None
+
+def _get_shared_session():
+    """跨账号共享的 ProxiedRequestSession（懒初始化，探针用签到页接口即可）。"""
+    global _proxied_session
+    if _proxied_session is None and _has_proxy_helper:
+        _proxied_session = ProxiedRequestSession(
+            base_url=CAIYUN_BASE,
+            test_path='/ycloud/signin/page/infoV3',
+            probe_headers={'User-Agent': DEFAULT_UA},
+            probe_method='GET',
+            proxy_mode=proxy_mode,
+        )
+    return _proxied_session
+
+
 class CaiYun:
     def __init__(self, phone, auth, index):
         self.phone = phone.strip()
@@ -129,6 +156,29 @@ class CaiYun:
         self.index = index
         self.session = requests.Session()
         self.jwt_token = ""
+
+    def _request(self, method, url, headers=None, cookies=None, params=None, body=None):
+        """统一请求入口：支持国内代理自动回退；返回解析后的 JSON dict。
+
+        有 freeproxy_helper 时走 ProxiedRequestSession（多域名用完整 URL），
+        网络错误/代理全失效时抛 ConnectionError 交给上层处理；否则回退裸 requests 直连。
+        """
+        hdrs = dict(headers or {})
+        if cookies:
+            hdrs['Cookie'] = '; '.join(f"{k}={v}" for k, v in cookies.items())
+        if params:
+            sep = '&' if '?' in url else '?'
+            url += sep + '&'.join(f"{k}={v}" for k, v in params.items())
+        session = _get_shared_session()
+        if session is not None:
+            result = session.request(method, url, body=body, headers=hdrs)
+            # 仅当返回的是 helper 内部网络错误标记(code=-1 且带 result:null)时转 ConnectionError，
+            # 避免把业务真实返回的 code=-1(如 tyrzLogin 参数错误)误判为网络错误
+            if isinstance(result, dict) and result.get('code') == -1 and 'result' in result:
+                raise requests.exceptions.ConnectionError(result.get('msg', '网络连接错误'))
+            return result
+        resp = self.session.request(method, url, headers=hdrs, json=body, timeout=15)
+        return resp.json()
 
     def _market_referer(self):
         return (
@@ -160,13 +210,12 @@ class CaiYun:
                 "Content-Type": "application/json",
                 "Host": "orches.yun.139.com",
             }
-            sso_resp = self.session.post(
+            sso_data = self._request(
+                "POST",
                 f"{ORCHES_BASE}/orchestration/auth-rebuild/token/v1.0/querySpecToken",
-                json={"account": self.phone, "toSourceId": TARGET_SOURCE_ID},
                 headers=sso_headers,
-                timeout=15,
+                body={"account": self.phone, "toSourceId": TARGET_SOURCE_ID},
             )
-            sso_data = sso_resp.json()
             if not sso_data.get("success"):
                 msg = sso_data.get("message") or sso_data
                 print(f"❌ 账号{self.index}: 获取 ssoToken 失败 - {msg}")
@@ -177,16 +226,15 @@ class CaiYun:
                 return False
 
             # Step 2: 用 ssoToken 换取 jwtToken
-            jwt_resp = self.session.post(
+            jwt_data = self._request(
+                "POST",
                 f"{PORTAL_BASE}/portal/auth/tyrzLogin.action",
-                params={"ssoToken": sso_token},
                 headers={
                     "User-Agent": DEFAULT_UA,
                     "Content-Type": "application/json",
                 },
-                timeout=15,
+                params={"ssoToken": sso_token},
             )
-            jwt_data = jwt_resp.json()
             try:
                 code = int(jwt_data.get("code", -1))
             except (TypeError, ValueError):
@@ -250,14 +298,13 @@ class CaiYun:
     def query_sign_status(self):
         """查询今日签到状态与奖励"""
         try:
-            resp = self.session.get(
+            data = self._request(
+                "GET",
                 f"{CAIYUN_BASE}/ycloud/signin/page/infoV3",
                 params={"client": "app"},
                 headers=self._market_headers(),
                 cookies=self._market_cookies(),
-                timeout=15,
             )
-            data = resp.json()
             try:
                 code = int(data.get("code", -1))
             except (TypeError, ValueError):
@@ -272,14 +319,13 @@ class CaiYun:
     def do_signin(self):
         """执行签到"""
         try:
-            resp = self.session.get(
+            data = self._request(
+                "GET",
                 f"{CAIYUN_BASE}/ycloud/signin/page/startSignIn",
                 params={"client": "app"},
                 headers=self._market_headers(),
                 cookies=self._market_cookies(),
-                timeout=15,
             )
-            data = resp.json()
             try:
                 code = int(data.get("code", -1))
             except (TypeError, ValueError):
@@ -303,9 +349,10 @@ class CaiYun:
             else:
                 account = self.phone
 
-            resp = self.session.post(
-                f"https://yun.139.com/orchestration/personalCloud/rankFiles/v1.0",
-                json={
+            data = self._request(
+                "POST",
+                "https://yun.139.com/orchestration/personalCloud/rankFiles/v1.0",
+                body={
                     "catalogID": "",
                     "contentSort": 1,
                     "contentDirection": 0,
@@ -320,9 +367,7 @@ class CaiYun:
                     "Referer": "https://yun.139.com/",
                     "Origin": "https://yun.139.com",
                 },
-                timeout=15,
             )
-            data = resp.json()
             if not data.get("success"):
                 return None
             inner = data.get("data") or {}

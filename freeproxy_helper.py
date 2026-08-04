@@ -31,6 +31,7 @@ import json
 import os
 import ssl
 import sys
+import time
 import urllib.error
 import urllib.request
 
@@ -53,13 +54,16 @@ DEFAULT_FILTER_RULE = {"country_code": ["CN"], "protocol": ["http", "https"]}
 # ============ WAF 检测与响应判定 ============
 
 def default_waf_detector(result):
-    """默认 WAF 拦截判定：403/405，或 msg 含 <!doctype/<html（被返回 HTML 而非 JSON）。
+    """默认拦截判定：403/405/503、msg 含 <!doctype/<html（被返回 HTML 而非 JSON），
+    或直连网络错误（code == -1，如境外 IP 无法连通国内服务）。
 
     result 是 _direct_request / _proxy_request 返回的 dict（含 code/msg/result 键）。
     """
     code = result.get("code")
     msg = str(result.get("msg", "")).lower()
-    if code in (403, 405):
+    if code in (403, 405, 503):
+        return True
+    if code == -1:
         return True
     if "<!doctype" in msg or "<html" in msg:
         return True
@@ -147,12 +151,21 @@ class ProxiedRequestSession:
 
     # ---------- 直连 ----------
 
+    def _build_url(self, path):
+        """path 为完整 URL 时原样返回，否则拼接到 base_url（支持多域名脚本）。"""
+        if path.startswith(("http://", "https://")):
+            return path
+        return self.base_url + (path if path.startswith("/") else "/" + path)
+
     def _direct_request(self, method, path, body=None, headers=None):
         """urllib 直连，零额外依赖。失败返回 {'code': -1, ...} 表示网络错误。"""
-        url = self.base_url + (path if path.startswith("/") else "/" + path)
+        url = self._build_url(path)
         data = json.dumps(body).encode() if body is not None else None
+        headers = dict(headers or {})
+        if body is not None and "content-type" not in {k.lower() for k in headers}:
+            headers["Content-Type"] = "application/json"
         req = urllib.request.Request(
-            url, data=data, headers=headers or {}, method=method.upper()
+            url, data=data, headers=headers, method=method.upper()
         )
         try:
             with urllib.request.urlopen(
@@ -230,7 +243,7 @@ class ProxiedRequestSession:
             print("[proxy] 未安装 requests 库，无法走代理")
             return {"code": -1, "msg": "requests not installed", "result": None}
 
-        url = self.base_url + (path if path.startswith("/") else "/" + path)
+        url = self._build_url(path)
         proxies_list = list(self._get_working_proxies())
         last_err = {"code": -1, "msg": "proxy: no working proxy", "result": None}
 
@@ -285,6 +298,12 @@ class ProxiedRequestSession:
 
         result = self._direct_request(method, path, body, headers)
         if self.waf_detector(result):
+            # 网络错误可能是偶发抖动（如 WAF 随机断连），重试一次直连仍失败才判定为被封锁
+            if result.get("code") == -1:
+                time.sleep(0.5)
+                result = self._direct_request(method, path, body, headers)
+                if not self.waf_detector(result):
+                    return result
             print("[proxy] 检测到 WAF 拦截（海外 IP 被拒），切换到国内代理...")
             self._waf_blocked = True
             return self._proxy_request(method, path, body, headers)
