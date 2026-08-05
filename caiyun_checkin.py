@@ -263,7 +263,7 @@ class CaiYun:
             return False
 
     def _extract_reward(self, payload):
-        """从返回结果中尽力提取奖励数值（MB）"""
+        """从返回结果中尽力提取奖励数值（云朵数）"""
         if isinstance(payload, dict):
             for key in ("cloudCount", "reward", "count", "total", "receive"):
                 value = payload.get(key)
@@ -399,7 +399,7 @@ class CaiYun:
 
             if signed_today:
                 reward = info_reward
-                status_msg = f"📅 今日已签到，本月累计获得 {reward}M 空间" if reward else "📅 今日已签到"
+                status_msg = f"📅 今日已签到，本月累计获得 {reward} 个云朵" if reward else "📅 今日已签到"
                 print(f"📅 账号{self.index}: {status_msg}")
                 is_success = True
             else:
@@ -407,7 +407,7 @@ class CaiYun:
                 print(f"🎯 账号{self.index}: 开始签到")
                 ok, reward, message = self.do_signin()
                 if ok:
-                    status_msg = f"✅ 签到成功，获得 {reward}M 空间" if reward else "✅ 签到成功"
+                    status_msg = f"✅ 签到成功，获得 {reward} 个云朵" if reward else "✅ 签到成功"
                     print(f"✅ 账号{self.index}: {status_msg}")
                     is_success = True
                 else:
