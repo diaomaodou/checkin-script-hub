@@ -179,17 +179,17 @@ def yx(ck):
 
     dl = _tst_request(ck, 'GET', '/api/intelligence/member/getMemberDetail')
     if dl['code'] == 200:
-        myprint(f"账号：{dl['result']['phone']}登录成功")
+        myprint(f"👤账号：{dl['result']['phone']}登录成功")
         phone = dl['result']['phone']
         data = {"activityId":activityId,"memberName":"","memberPhone":phone}
         lq = _tst_request(ck, 'POST', '/api/sign/member/signV2', data)
         if lq['code'] == 200:
             if lq['result']['rewardInfoList'][0]['rewardName'] == None:
-                myprint(f"签到情况：获得 {lq['result']['rewardInfoList'][0]['point']} 积分")
+                myprint(f"📅签到情况：获得 {lq['result']['rewardInfoList'][0]['point']} 积分")
             else:
-                myprint(f"签到情况：获得 {lq['result']['rewardInfoList'][0]['rewardName']}")
+                myprint(f"📅签到情况：获得 {lq['result']['rewardInfoList'][0]['rewardName']}")
         else:
-            myprint(f"签到情况：{lq['msg']}")
+            myprint(f"📅签到情况：{lq['msg']}")
 
 def main():
     """主程序入口"""
