@@ -36,6 +36,7 @@ ql-script-hub/
 ├── caiyun_checkin.py            # China Mobile Cloud Drive (Caiyun) sign-in
 ├── passnat_checkin.py           # PassNAT sign-in
 ├── tsthb_checkin.py             # Tastien Burger sign-in
+├── genshin_checkin.py           # Genshin Impact (miyoushe) sign-in
 └── archive/                     # Archived scripts (no longer maintained)
     └── leaflow_checkin.py       # Leaflow sign-in
 ```
@@ -117,6 +118,15 @@ ql-script-hub/
 |--------|------|----------|--------|------|
 | `PASSNAT_SK` | PassNAT API key | **Required** | `sk_xxxxx` | Separate multiple accounts with new lines |
 
+#### 🎮 Genshin Impact
+
+| Variable | Description | Required | Example | Notes |
+|--------|------|----------|--------|------|
+| `GENSHIN_COOKIE` | miHoYo cookie | **Required** | `account_id=xxx; cookie_token=xxx` | Must contain `account_id` and `cookie_token`; see below. Separate multiple accounts with `&&` or new lines |
+| `GENSHIN_STOKEN` | miHoYo stoken | Optional | `v2_xxx` or `stuid=xx&mid=yy&stoken=zz` | Auto-refreshes the cookie when it expires; one entry per account, same separators |
+| `DAMAGOU_USERKEY` | damagou.top user key | Optional | `xxxxxxxx` | Solves geetest captchas automatically (api.damagou.top); skipped when unset |
+| `USE_CN_PROXY` | CN proxy mode | Optional | `auto` | `always` recommended on overseas VPS, see the Tastien notes above |
+
 #### ⏰ Randomization Settings (shared by all scripts)
 
 | Variable | Description | Required | Example | Notes |
@@ -172,6 +182,15 @@ ql-script-hub/
 3. Click **Generate Key** or copy an existing key
 4. Fill the `SK_xxxxx`-formatted key into the environment variable
 5. For multiple accounts, generate multiple keys and separate them with new lines
+
+#### miHoYo cookie (Genshin Impact)
+
+1. Sign in to [miyoushe](https://bbs.mihoyo.com) or the [Genshin Impact event page](https://act.mihoyo.com) in a browser (perform a manual check-in there at least once)
+2. Press `F12` → open the `Network` tab → refresh the page
+3. Find any request sent to `mihoyo.com` and copy the full `Cookie` header
+4. Make sure the cookie contains both `account_id` and `cookie_token`
+5. Put it in `GENSHIN_COOKIE` (separate multiple accounts with `&&` or new lines)
+6. Optional: also copy `stoken` (plus `mid` for `v2_` tokens) into `GENSHIN_STOKEN` so an expired cookie can be refreshed automatically
 
 ---
 

@@ -37,6 +37,7 @@ ql-script-hub/
 ├── caiyun_checkin.py      # 移动云盘(和彩云)签到脚本
 ├── passnat_checkin.py     # PassNAT签到脚本
 ├── tsthb_checkin.py       # 塔斯汀汉堡签到脚本
+├── genshin_checkin.py     # 原神米游社签到脚本
 └── archive/               # 已归档脚本（不再维护）
     └── leaflow_checkin.py # leaflow签到脚本
 ```
@@ -131,6 +132,15 @@ ql-script-hub/
 | ---------------- | ---------------- | -------------- | --------------------------- | -------------------------- |
 | `PASSNAT_SK` | PassNAT接口密钥 | **必需** | `sk_xxxxx` | 多账号用换行分隔 |
 
+#### 🎮 原神签到配置
+
+| 变量名           | 说明             | 是否必需       | 示例值                      | 备注                       |
+| ---------------- | ---------------- | -------------- | --------------------------- | -------------------------- |
+| `GENSHIN_COOKIE` | 米哈游Cookie | **必需** | `account_id=xxx; cookie_token=xxx` | 须包含 `account_id` 和 `cookie_token`，获取方式见下方说明，多账号用 `&&`或换行分隔 |
+| `GENSHIN_STOKEN` | 米哈游stoken | 可选 | `v2_xxx` 或 `stuid=xx&mid=yy&stoken=zz` | Cookie 失效时自动刷新，与账号一一对应，同分隔符 |
+| `DAMAGOU_USERKEY` | 打码狗userkey | 可选 | `xxxxxxxx` | 触发验证码时自动识别（api.damagou.top），未配置则跳过 |
+| `USE_CN_PROXY` | 国内代理模式 | 可选 | `auto` | 境外 VPS 推荐 `always`，详见上方塔斯汀说明 |
+
 #### ⏰ 随机化配置（所有脚本共用）
 
 | 变量名               | 说明               | 是否必需 | 示例值   | 备注                            |
@@ -193,6 +203,15 @@ ql-script-hub/
 3. 点击 **生成密钥** 或复制已有的密钥
 4. 将获取到的 `SK_xxxxx` 格式的密钥填入环境变量
 5. 多账号用户可生成多个密钥，换行分隔填写
+
+#### 米哈游 Cookie（原神签到）
+
+1. 浏览器登录 [米游社](https://bbs.mihoyo.com) 或 [原神活动页](https://act.mihoyo.com)（需先在活动页手动签到过一次）
+2. 按 `F12` 打开开发者工具 → `Network` 标签页 → 刷新页面
+3. 找到任意发往 `mihoyo.com` 的请求，复制请求头中的完整 `Cookie`
+4. 确认 Cookie 中包含 `account_id` 和 `cookie_token` 两个键
+5. 填入环境变量 `GENSHIN_COOKIE`（多账号用 `&&` 或换行分隔）
+6. 可选：同时复制 `stoken`（`v2_` 开头的还需 `mid`）填入 `GENSHIN_STOKEN`，Cookie 失效时可自动刷新，减少重新抓取频率
 
 ---
 
