@@ -316,23 +316,45 @@ class GenshinCheckin:
         cookie_hdr = f"stuid={stuid};stoken={stoken}"
         if mid:
             cookie_hdr += f";mid={mid}"
-        print(f"🔄 账号{self.index}: Cookie 失效，尝试用 stoken 刷新 cookie_token")
+        print(f"🔄 账号{self.index}: 尝试用 stoken 刷新 cookie_token")
         try:
             data = self._request("GET", COOKIE_TOKEN_REFRESH_URL, extra_headers={"Cookie": cookie_hdr})
         except requests.exceptions.ConnectionError as e:
             print(f"❌ 账号{self.index}: 刷新 cookie_token 网络错误: {e}")
             return False
-        token = (data.get("data") or {}).get("cookie_token")
+        refresh_data = data.get("data") or {}
+        token = refresh_data.get("cookie_token")
         if data.get("retcode") != 0 or not token:
             print(f"❌ 账号{self.index}: 刷新 cookie_token 失败: "
                   f"{data.get('message')}({data.get('retcode')})")
             return False
+        account_id = refresh_data.get("account_id") or stuid
         if "cookie_token=" in self.cookie:
             self.cookie = re.sub(r"cookie_token=[^;]*", f"cookie_token={token}", self.cookie)
         else:
             self.cookie = f"{self.cookie};cookie_token={token}"
+        if "account_id=" in self.cookie:
+            self.cookie = re.sub(r"account_id=[^;]*", f"account_id={account_id}", self.cookie)
+        else:
+            self.cookie = f"{self.cookie};account_id={account_id}"
         print(f"✅ 账号{self.index}: cookie_token 刷新成功")
         return True
+
+    def _ensure_cookie_token(self):
+        """确保 Cookie 包含签到必需的 cookie_token。
+
+        event/luna 接口（查询/签到）要求 Cookie 含 account_id+cookie_token；
+        仅有 ltoken/ltuid 时角色列表可用，但签到/状态查询会报 -100。
+        若 Cookie 缺少 cookie_token，则用 GENSHIN_STOKEN 自动补齐。
+        """
+        if parse_cookie_value(self.cookie, "cookie_token"):
+            return True
+        if not self.stoken_info or not self.stoken_info.get("stoken"):
+            print(f"❌ 账号{self.index}: Cookie 缺少 cookie_token（签到必需），"
+                  f"且未配置 GENSHIN_STOKEN，无法自动补齐")
+            return False
+        print(f"⚠️ 账号{self.index}: Cookie 缺少 cookie_token，尝试用 stoken 自动补齐")
+        return self._refresh_cookie_token()
 
     def _get_awards(self):
         """获取当月签到奖励列表"""
@@ -342,17 +364,23 @@ class GenshinCheckin:
         awards = data.get("data", {}).get("awards", [])
         return awards if isinstance(awards, list) else []
 
-    def _get_info(self, role):
-        """查询角色签到状态"""
+    def _get_info(self, role, retried=False):
+        """查询角色签到状态（遇 -100 先用 stoken 刷新 cookie_token 后重试一次）"""
         data = self._request("GET", INFO_URL, params={
             "act_id": ACT_ID,
             "region": role.get("region"),
             "uid": role.get("game_uid"),
         })
+        if data.get("retcode") == -100 and not retried:
+            if self._refresh_cookie_token():
+                return self._get_info(role, retried=True)
         return data.get("data", {}) if data.get("retcode") == 0 else {}
 
-    def _sign(self, role, solution=None):
-        """执行签到；solution 为验证码识别结果时附带极验三头"""
+    def _sign(self, role, solution=None, retried=False):
+        """执行签到；solution 为验证码识别结果时附带极验三头
+
+        遇 -100 时先用 stoken 刷新 cookie_token 后重试一次。
+        """
         headers = {}
         if solution:
             headers = {
@@ -360,11 +388,15 @@ class GenshinCheckin:
                 "x-rpc-validate": solution["validate"],
                 "x-rpc-seccode": f"{solution['validate']}|jordan",
             }
-        return self._request("POST", SIGN_URL, json_body={
+        result = self._request("POST", SIGN_URL, json_body={
             "act_id": ACT_ID,
             "region": role.get("region"),
             "uid": role.get("game_uid"),
         }, extra_headers=headers)
+        if result.get("retcode") == -100 and not retried:
+            if self._refresh_cookie_token():
+                return self._sign(role, solution=solution, retried=True)
+        return result
 
     # ---------------- 验证码（打码狗） ----------------
 
@@ -463,6 +495,16 @@ class GenshinCheckin:
         account_uid = (parse_cookie_value(self.cookie, "account_id")
                        or parse_cookie_value(self.cookie, "ltuid"))
         lines.append(f"👤 账号: {mask_account(account_uid)}")
+
+        if not self._ensure_cookie_token():
+            msg = ("Cookie 缺少 cookie_token（签到必需）且未配置 GENSHIN_STOKEN，无法签到。"
+                   "请重新登录 act.mihoyo.com 复制完整 Cookie（须包含 account_id 和 "
+                   "cookie_token），或在 GENSHIN_STOKEN 中配置 stoken（v2_ 开头需附 mid）"
+                   "让脚本自动补齐")
+            print(f"❌ 账号{self.index}: {msg}")
+            lines.append(f"📊 状态: ❌ {msg}")
+            lines.append(f"🕐 时间: {datetime.now():%Y-%m-%d %H:%M:%S}")
+            return "\n".join(lines), False
 
         roles = self._get_roles()
         if not roles:

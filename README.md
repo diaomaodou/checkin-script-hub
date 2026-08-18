@@ -206,12 +206,14 @@ ql-script-hub/
 
 #### 米哈游 Cookie（原神签到）
 
-1. 浏览器登录 [米游社](https://bbs.mihoyo.com) 或 [原神活动页](https://act.mihoyo.com)（需先在活动页手动签到过一次）
+1. 浏览器登录 [米游社](https://user.mihoyo.com/)
 2. 按 `F12` 打开开发者工具 → `Network` 标签页 → 刷新页面
 3. 找到任意发往 `mihoyo.com` 的请求，复制请求头中的完整 `Cookie`
 4. 确认 Cookie 中包含 `account_id` 和 `cookie_token` 两个键
+
+   > ⚠️ 若只有 `ltoken`/`ltuid`（来自米游社 App 或登录中转页），角色列表可正常获取，但签到/状态查询会报 `请登录后重试（-100）`。请务必从登录后的 `act.mihoyo.com` 页面复制完整 Cookie，或在 `GENSHIN_STOKEN` 中配置 stoken 让脚本自动补齐 `cookie_token`。
 5. 填入环境变量 `GENSHIN_COOKIE`（多账号用 `&&` 或换行分隔）
-6. 可选：同时复制 `stoken`（`v2_` 开头的还需 `mid`）填入 `GENSHIN_STOKEN`，Cookie 失效时可自动刷新，减少重新抓取频率
+6. 可选：同时复制 `stoken`（`v2_` 开头的还需 `mid`）填入 `GENSHIN_STOKEN`，Cookie 失效或缺少 `cookie_token` 时可自动刷新/补齐，减少重新抓取频率
 
 ---
 

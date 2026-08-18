@@ -189,8 +189,10 @@ ql-script-hub/
 2. Press `F12` → open the `Network` tab → refresh the page
 3. Find any request sent to `mihoyo.com` and copy the full `Cookie` header
 4. Make sure the cookie contains both `account_id` and `cookie_token`
+
+   > ⚠️ If the cookie only has `ltoken`/`ltuid` (from the miyoushe app or a login redirect page), the role list works but check-in/status queries fail with `please log in and retry (-100)`. Always copy the full cookie from the signed-in `act.mihoyo.com` page, or set `GENSHIN_STOKEN` so the script can auto-fill `cookie_token`.
 5. Put it in `GENSHIN_COOKIE` (separate multiple accounts with `&&` or new lines)
-6. Optional: also copy `stoken` (plus `mid` for `v2_` tokens) into `GENSHIN_STOKEN` so an expired cookie can be refreshed automatically
+6. Optional: also copy `stoken` (plus `mid` for `v2_` tokens) into `GENSHIN_STOKEN` so an expired cookie can be refreshed automatically or a missing `cookie_token` can be auto-completed
 
 ---
 
