@@ -122,7 +122,7 @@ ql-script-hub/
 
 | Variable | Description | Required | Example | Notes |
 |--------|------|----------|--------|------|
-| `GENSHIN_COOKIE` | miHoYo cookie | **Required** | `account_id=xxx; cookie_token=xxx` | Must contain `account_id` and `cookie_token`; see below. Separate multiple accounts with `&&` or new lines |
+| `GENSHIN_COOKIE` | miHoYo cookie | **Required** | `account_id=xxx; cookie_token=xxx` | Must contain `account_id` and `cookie_token` (new logins issue `cookie_token_v2`, both are accepted); see below. Separate multiple accounts with `&&` or new lines |
 | `GENSHIN_STOKEN` | miHoYo stoken | Optional | `v2_xxx` or `stuid=xx&mid=yy&stoken=zz` | Auto-refreshes the cookie when it expires; one entry per account, same separators |
 | `DAMAGOU_USERKEY` | damagou.top user key | Optional | `xxxxxxxx` | Solves geetest captchas automatically (api.damagou.top); skipped when unset |
 | `USE_CN_PROXY` | CN proxy mode | Optional | `auto` | `always` recommended on overseas VPS, see the Tastien notes above |
@@ -188,9 +188,11 @@ ql-script-hub/
 1. Sign in to [miyoushe](https://bbs.mihoyo.com) or the [Genshin Impact event page](https://act.mihoyo.com) in a browser (perform a manual check-in there at least once)
 2. Press `F12` → open the `Network` tab → refresh the page
 3. Find any request sent to `mihoyo.com` and copy the full `Cookie` header
-4. Make sure the cookie contains both `account_id` and `cookie_token`
+4. Make sure the cookie contains both `account_id` and `cookie_token` (or `cookie_token_v2`)
 
    > ⚠️ If the cookie only has `ltoken`/`ltuid` (from the miyoushe app or a login redirect page), the role list works but check-in/status queries fail with `please log in and retry (-100)`. Always copy the full cookie from the signed-in `act.mihoyo.com` page, or set `GENSHIN_STOKEN` so the script can auto-fill `cookie_token`.
+   >
+   > 💡 Since 2025 the new login flow only issues v2 fields such as `cookie_token_v2`/`ltoken_v2` (the legacy `cookie_token` is no longer generated). Cookies of this type work directly with the script.
 5. Put it in `GENSHIN_COOKIE` (separate multiple accounts with `&&` or new lines)
 6. Optional: also copy `stoken` (plus `mid` for `v2_` tokens) into `GENSHIN_STOKEN` so an expired cookie can be refreshed automatically or a missing `cookie_token` can be auto-completed
 

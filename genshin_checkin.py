@@ -201,6 +201,25 @@ def parse_cookie_value(cookie, key):
     return ""
 
 
+def parse_account_id(cookie):
+    """从 cookie 中解析账号 UID（兼容 v1/v2 各字段）"""
+    return (parse_cookie_value(cookie, "account_id")
+            or parse_cookie_value(cookie, "account_id_v2")
+            or parse_cookie_value(cookie, "ltuid")
+            or parse_cookie_value(cookie, "ltuid_v2")
+            or parse_cookie_value(cookie, "stuid"))
+
+
+def has_cookie_token(cookie):
+    """Cookie 是否包含签到必需的 cookie_token（v1 或 v2 均可）。
+
+    miHoYo 新版登录已改为下发 cookie_token_v2（旧 cookie_token 不再生成），
+    两者均为签到 API 兼容的 Cookie Token 形式。
+    """
+    return bool(parse_cookie_value(cookie, "cookie_token")
+                or parse_cookie_value(cookie, "cookie_token_v2"))
+
+
 def _retcode_is_valid(resp):
     """代理探针可用性判定：米哈游接口返回含 retcode 的 JSON 即为可达。
 
@@ -308,8 +327,7 @@ class GenshinCheckin:
                   f"（GENSHIN_STOKEN 用 stuid=..&mid=..&stoken=.. 格式）")
             return False
         stuid = (self.stoken_info.get("stuid")
-                 or parse_cookie_value(self.cookie, "account_id")
-                 or parse_cookie_value(self.cookie, "ltuid"))
+                 or parse_account_id(self.cookie))
         if not stuid:
             print(f"❌ 账号{self.index}: 无法解析 stuid（cookie 缺少 account_id/ltuid）")
             return False
@@ -323,12 +341,12 @@ class GenshinCheckin:
             print(f"❌ 账号{self.index}: 刷新 cookie_token 网络错误: {e}")
             return False
         refresh_data = data.get("data") or {}
-        token = refresh_data.get("cookie_token")
+        token = refresh_data.get("cookie_token") or refresh_data.get("cookie_token_v2")
         if data.get("retcode") != 0 or not token:
             print(f"❌ 账号{self.index}: 刷新 cookie_token 失败: "
                   f"{data.get('message')}({data.get('retcode')})")
             return False
-        account_id = refresh_data.get("account_id") or stuid
+        account_id = refresh_data.get("account_id") or refresh_data.get("account_id_v2") or stuid
         if "cookie_token=" in self.cookie:
             self.cookie = re.sub(r"cookie_token=[^;]*", f"cookie_token={token}", self.cookie)
         else:
@@ -341,19 +359,20 @@ class GenshinCheckin:
         return True
 
     def _ensure_cookie_token(self):
-        """确保 Cookie 包含签到必需的 cookie_token。
+        """确保 Cookie 包含签到必需的 cookie_token（v1 或 v2 均可）。
 
         event/luna 接口（查询/签到）要求 Cookie 含 account_id+cookie_token；
-        仅有 ltoken/ltuid 时角色列表可用，但签到/状态查询会报 -100。
-        若 Cookie 缺少 cookie_token，则用 GENSHIN_STOKEN 自动补齐。
+        miHoYo 新版登录签发的是 cookie_token_v2（旧 cookie_token 不再下发），
+        两者均为签到 API 兼容形式。仅当缺少全部 token 时，才尝试用
+        GENSHIN_STOKEN 自动补齐。
         """
-        if parse_cookie_value(self.cookie, "cookie_token"):
+        if has_cookie_token(self.cookie):
             return True
         if not self.stoken_info or not self.stoken_info.get("stoken"):
-            print(f"❌ 账号{self.index}: Cookie 缺少 cookie_token（签到必需），"
+            print(f"❌ 账号{self.index}: Cookie 缺少 cookie_token/cookie_token_v2（签到必需），"
                   f"且未配置 GENSHIN_STOKEN，无法自动补齐")
             return False
-        print(f"⚠️ 账号{self.index}: Cookie 缺少 cookie_token，尝试用 stoken 自动补齐")
+        print(f"⚠️ 账号{self.index}: Cookie 缺少 cookie_token/cookie_token_v2，尝试用 stoken 自动补齐")
         return self._refresh_cookie_token()
 
     def _get_awards(self):
@@ -492,15 +511,14 @@ class GenshinCheckin:
         """单账号签到主流程，返回 (result_msg, is_success)"""
         print(f"👤 账号{self.index}: 🎯 开始原神签到")
         lines = ["🎮 原神签到结果"]
-        account_uid = (parse_cookie_value(self.cookie, "account_id")
-                       or parse_cookie_value(self.cookie, "ltuid"))
+        account_uid = parse_account_id(self.cookie)
         lines.append(f"👤 账号: {mask_account(account_uid)}")
 
         if not self._ensure_cookie_token():
-            msg = ("Cookie 缺少 cookie_token（签到必需）且未配置 GENSHIN_STOKEN，无法签到。"
-                   "请重新登录 act.mihoyo.com 复制完整 Cookie（须包含 account_id 和 "
-                   "cookie_token），或在 GENSHIN_STOKEN 中配置 stoken（v2_ 开头需附 mid）"
-                   "让脚本自动补齐")
+            msg = ("Cookie 缺少 cookie_token/cookie_token_v2（签到必需）且未配置 GENSHIN_STOKEN，"
+                   "无法签到。请重新登录 act.mihoyo.com 复制完整 Cookie（须包含 account_id 和 "
+                   "cookie_token/cookie_token_v2），或在 GENSHIN_STOKEN 中配置 stoken"
+                   "（v2_ 开头需附 mid）让脚本自动补齐")
             print(f"❌ 账号{self.index}: {msg}")
             lines.append(f"📊 状态: ❌ {msg}")
             lines.append(f"🕐 时间: {datetime.now():%Y-%m-%d %H:%M:%S}")
@@ -564,7 +582,7 @@ def main():
         print("1. 浏览器登录米游社 https://bbs.mihoyo.com 或活动页 https://act.mihoyo.com（需先手动签到过一次）")
         print("2. 按 F12 打开开发者工具 → Network 标签页 → 刷新页面")
         print("3. 找到任意发往 mihoyo.com 的请求，复制请求头中的完整 Cookie")
-        print("4. 确认 Cookie 中包含 account_id 和 cookie_token 两个键")
+        print("4. 确认 Cookie 中包含 account_id 和 cookie_token/cookie_token_v2 两个键")
         print("5. 填入环境变量 GENSHIN_COOKIE（多账号用 && 或换行分隔）")
         notify_user("原神签到", "❌ 未配置 GENSHIN_COOKIE，请参考 README 配置")
         return
@@ -590,12 +608,12 @@ def main():
         try:
             msg, ok = checkin.main()
         except requests.exceptions.ConnectionError as e:
-            msg = (f"🎮 原神签到结果\n👤 账号: {mask_account(parse_cookie_value(account, 'account_id'))}\n"
+            msg = (f"🎮 原神签到结果\n👤 账号: {mask_account(parse_account_id(account))}\n"
                    f"📊 状态: ❌ 网络错误（国内代理不可用）: {e}")
             ok = False
             print(f"❌ 账号{index}: 网络错误: {e}")
         except Exception as e:
-            msg = (f"🎮 原神签到结果\n👤 账号: {mask_account(parse_cookie_value(account, 'account_id'))}\n"
+            msg = (f"🎮 原神签到结果\n👤 账号: {mask_account(parse_account_id(account))}\n"
                    f"📊 状态: ❌ 执行异常: {e}")
             ok = False
             print(f"❌ 账号{index}: 执行异常: {e}")
