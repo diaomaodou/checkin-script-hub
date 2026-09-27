@@ -37,6 +37,7 @@ ql-script-hub/
 ├── passnat_checkin.py           # PassNAT sign-in
 ├── tsthb_checkin.py             # Tastien Burger sign-in
 ├── genshin_checkin.py           # Genshin Impact (miyoushe) sign-in
+├── glados_checkin.py            # GLaDOS sign-in
 └── archive/                     # Archived scripts (no longer maintained)
     └── leaflow_checkin.py       # Leaflow sign-in
 ```
@@ -127,6 +128,14 @@ ql-script-hub/
 | `DAMAGOU_USERKEY` | damagou.top user key | Optional | `xxxxxxxx` | Solves geetest captchas automatically (api.damagou.top); skipped when unset |
 | `USE_CN_PROXY` | CN proxy mode | Optional | `auto` | `always` recommended on overseas VPS, see the Tastien notes above |
 
+#### 🌐 GLaDOS
+
+| Variable | Description | Required | Example | Notes |
+|--------|------|----------|--------|------|
+| `GLADOS_COOKIE` | GLaDOS cookie | **Required** | `koa:sess=xxx; gld:sess=xxx` | Separate multiple accounts with `&&` or new lines |
+| `GLADOS_UA` | User-Agent used for check-in | Optional | `Mozilla/5.0 (Windows NT 10.0...)` | Defaults to a Windows Chrome UA; change it to match your login browser if device verification fails |
+| `PRIVACY_MODE` | Privacy mode | Optional | `true` | Default is `true`, masks the email |
+
 #### ⏰ Randomization Settings (shared by all scripts)
 
 | Variable | Description | Required | Example | Notes |
@@ -195,6 +204,16 @@ ql-script-hub/
    > 💡 Since 2025 the new login flow only issues v2 fields such as `cookie_token_v2`/`ltoken_v2` (the legacy `cookie_token` is no longer generated). Cookies of this type work directly with the script.
 5. Put it in `GENSHIN_COOKIE` (separate multiple accounts with `&&` or new lines)
 6. Optional: also copy `stoken` (plus `mid` for `v2_` tokens) into `GENSHIN_STOKEN` so an expired cookie can be refreshed automatically or a missing `cookie_token` can be auto-completed
+
+#### GLaDOS cookie
+
+1. Sign in to [GLaDOS](https://glados.rocks/) in a browser and open the check-in page
+2. Press `F12` → open the `Network` tab
+3. Click check-in and find the `checkin` request
+4. Copy the full `Cookie` header (including `koa:sess`, `gld:sess`, etc.) into `GLADOS_COOKIE`
+5. Separate multiple accounts with `&&` or new lines
+
+> ⚠️ GLaDOS verifies that the `User-Agent` matches the login device; a mismatch returns `device-mismatch` ("Automated check-in detected"). The script defaults to a Windows Chrome UA. If check-in reports device verification failure, set `GLADOS_UA` to the same User-Agent as your login browser (e.g. a macOS UA if you signed in on macOS).
 
 ---
 
