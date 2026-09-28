@@ -1,19 +1,21 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 """
-cron "30 9 * * *" script-path=glados_checkin.py,tag=匹配cron用
+cron "30 21 * * *" script-path=glados_checkin.py,tag=匹配cron用
 new Env('GLaDOS签到')
 """
 
 import os
+import random
 import re
 import time
-import random
-import requests
 from datetime import datetime, timedelta
+
+import requests
 
 try:
     import urllib3
+
     urllib3.disable_warnings()
 except Exception:
     pass
@@ -23,13 +25,14 @@ hadsend = False
 send = None
 try:
     from notify import send
+
     hadsend = True
     print("✅ 已加载notify.py通知模块")
 except ImportError:
     print("⚠️  未加载通知模块，跳过通知功能")
 
 # 随机延迟配置
-max_random_delay = int(os.getenv("MAX_RANDOM_DELAY", "3600"))
+max_random_delay = int(os.getenv("MAX_RANDOM_DELAY", "600"))
 random_signin = os.getenv("RANDOM_SIGNIN", "true").lower() == "true"
 privacy_mode = os.getenv("PRIVACY_MODE", "true").lower() == "true"
 
@@ -118,13 +121,15 @@ class Glados:
         self.cookie = cookie.strip()
         self.index = index
         self.session = requests.Session()
-        self.session.headers.update({
-            "User-Agent": DEFAULT_UA,
-            "Cookie": self.cookie,
-            "Accept": "application/json, text/plain, */*",
-            "Origin": GLADOS_BASE,
-            "Referer": f"{GLADOS_BASE}/console/checkin",
-        })
+        self.session.headers.update(
+            {
+                "User-Agent": DEFAULT_UA,
+                "Cookie": self.cookie,
+                "Accept": "application/json, text/plain, */*",
+                "Origin": GLADOS_BASE,
+                "Referer": f"{GLADOS_BASE}/console/checkin",
+            }
+        )
 
     def _get_status(self):
         """获取账号状态（剩余天数、邮箱等）"""
@@ -145,6 +150,18 @@ class Glados:
             return resp.json()
         except Exception as e:
             return {"code": -1, "message": f"请求异常: {e}"}
+
+    @staticmethod
+    def _extract_balance(result):
+        """从签到返回中提取当前积分余额"""
+        for entry in result.get("list") or []:
+            balance = entry.get("balance")
+            if balance is not None:
+                try:
+                    return int(float(balance))
+                except (TypeError, ValueError):
+                    continue
+        return None
 
     def main(self):
         """单账号签到主流程，返回 (result_msg, is_success)"""
@@ -172,6 +189,7 @@ class Glados:
         code = result.get("code")
         message = result.get("message") or result.get("msg") or ""
         reason = result.get("reason") or ""
+        balance = self._extract_balance(result)
 
         if code == 0:
             points = result.get("points")
@@ -185,8 +203,10 @@ class Glados:
             status_line = f"📅 今日已签到"
             is_success = True
         elif code == 4 or reason == "device-mismatch":
-            msg = ("⚠️ 设备校验失败（User-Agent 与登录设备不一致）。请在环境变量 "
-                   "GLADOS_UA 中配置与登录浏览器一致的 User-Agent 后重试")
+            msg = (
+                "⚠️ 设备校验失败（User-Agent 与登录设备不一致）。请在环境变量 "
+                "GLADOS_UA 中配置与登录浏览器一致的 User-Agent 后重试"
+            )
             print(f"❌ 账号{self.index}: {msg}")
             status_line = f"❌ {msg}"
             is_success = False
@@ -197,6 +217,8 @@ class Glados:
             is_success = False
 
         lines.append(f"📊 签到状态: {status_line}")
+        if is_success and balance is not None:
+            lines.append(f"💰 当前积分: {balance}")
         if left_days is not None:
             lines.append(f"📅 剩余天数: {left_days} 天")
         lines.append(f"🕐 时间: {datetime.now():%Y-%m-%d %H:%M:%S}")
@@ -241,13 +263,11 @@ def main():
         try:
             msg, ok = Glados(cookie, index).main()
         except requests.exceptions.ConnectionError as e:
-            msg = (f"🌐 GLaDOS 签到结果\n👤 账号: 账号{index}\n"
-                   f"📊 状态: ❌ 网络错误: {e}")
+            msg = f"🌐 GLaDOS 签到结果\n👤 账号: 账号{index}\n📊 状态: ❌ 网络错误: {e}"
             ok = False
             print(f"❌ 账号{index}: 网络错误: {e}")
         except Exception as e:
-            msg = (f"🌐 GLaDOS 签到结果\n👤 账号: 账号{index}\n"
-                   f"📊 状态: ❌ 执行异常: {e}")
+            msg = f"🌐 GLaDOS 签到结果\n👤 账号: 账号{index}\n📊 状态: ❌ 执行异常: {e}"
             ok = False
             print(f"❌ 账号{index}: 执行异常: {e}")
         if ok:
@@ -264,8 +284,10 @@ def main():
         ]
         notify_user("GLaDOS签到汇总", "\n".join(summary))
 
-    print(f"==== GLaDOS 签到完成 - 成功{success_count}/{len(accounts)} - "
-          f"{datetime.now():%Y-%m-%d %H:%M:%S} ====")
+    print(
+        f"==== GLaDOS 签到完成 - 成功{success_count}/{len(accounts)} - "
+        f"{datetime.now():%Y-%m-%d %H:%M:%S} ===="
+    )
 
 
 if __name__ == "__main__":
