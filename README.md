@@ -144,11 +144,15 @@ ql-script-hub/
 
 #### 🌐 GLaDOS签到配置
 
-| 变量名           | 说明             | 是否必需       | 示例值                      | 备注                       |
-| ---------------- | ---------------- | -------------- | --------------------------- | -------------------------- |
-| `GLADOS_COOKIE` | GLaDOS Cookie | **必需** | `koa:sess=xxx; gld:sess=xxx` | 多账号用 `&&`或换行分隔 |
-| `GLADOS_UA` | 签到使用的 User-Agent | 可选 | `Mozilla/5.0 (Windows NT 10.0...)` | 默认 Windows Chrome UA；设备校验失败时改为与登录浏览器一致 |
-| `PRIVACY_MODE` | 隐私保护模式 | 可选 | `true` | 默认 `true`，脱敏显示邮箱 |
+| 变量名                       | 说明                   | 是否必需 | 示例值                             | 备注                                                       |
+| ---------------------------- | ---------------------- | -------- | ---------------------------------- | ---------------------------------------------------------- |
+| `GLADOS_COOKIE`              | GLaDOS Cookie          | **必需** | `gld:sess=xxx; gld:sess.sig=xxx`   | 完整 Cookie；多账号用 `&&` 或换行分隔                      |
+| `GLADOS_UA`                  | 签到使用的 User-Agent  | 可选     | `Mozilla/5.0 (Windows NT 10.0...)` | 默认 Windows Chrome UA；设备校验失败时改为与登录浏览器一致 |
+| `PRIVACY_MODE`               | 隐私保护模式           | 可选     | `true`                             | 默认 `true`，脱敏显示邮箱                                  |
+| `GLADOS_MAX_ATTEMPTS`        | 签到最大尝试次数       | 可选     | `3`                                | 默认 3 次，每次重新获取 challenge；认证或设备拒绝不重试    |
+| `GLADOS_RETRY_DELAY_SECONDS` | 临时失败重试间隔（秒） | 可选     | `60`                               | 默认 60 秒；非负整数                                       |
+
+签到使用 `glados.cloud`，先获取一次性 challenge、计算 proof、等待 2.7 秒，再向同域提交对应的 nonce/proof；无效或过期验证不会回退旧签到流程。网络错误、HTTP 429/5xx、响应格式异常等临时失败会重试，未知业务错误不自动重试。签到成功或明确已签到后，查询最新积分和剩余天数，**不自动兑换积分**。资料查询失败只提示未刷新，不改变已确认的签到结果；积分查询失败时可显示签到响应中的余额作为回退。全部账号签到成功或已签到时退出码为 `0`；缺少 Cookie 或任一账号签到失败时为 `1`。奖励以服务端实际流水为准，返回 1 积分也属于成功，不会因此反复签到。
 
 #### ⏰ 随机化配置（所有脚本共用）
 
@@ -228,10 +232,10 @@ ql-script-hub/
 
 #### GLaDOS Cookie
 
-1. 浏览器登录 [GLaDOS](https://glados.rocks/) 并进入签到页面
+1. 浏览器登录 [GLaDOS](https://glados.cloud/) 并进入签到页面
 2. 按 `F12` 打开开发者工具 → `Network` 标签页
-3. 点击签到，找到 `checkin` 请求
-4. 复制请求头中的完整 `Cookie`（包含 `koa:sess`、`gld:sess` 等）填入 `GLADOS_COOKIE`
+3. 刷新页面，找到成功的 `/api/user/status` 请求（无需先手动签到）
+4. 复制请求头中的完整 `Cookie`（必须包含 `gld:sess` 与 `gld:sess.sig`）填入 `GLADOS_COOKIE`
 5. 多账号用 `&&` 或换行分隔
 
 > ⚠️ GLaDOS 会校验 `User-Agent` 与登录设备是否一致，不一致会返回 `device-mismatch`（提示"检测到自动化签到"）。脚本默认使用 Windows Chrome UA；若签到报设备校验失败，请把 `GLADOS_UA` 配置为与登录浏览器一致的 User-Agent（例如 macOS 登录就填 macOS 的 UA）。

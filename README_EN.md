@@ -130,11 +130,15 @@ ql-script-hub/
 
 #### 🌐 GLaDOS
 
-| Variable | Description | Required | Example | Notes |
-|--------|------|----------|--------|------|
-| `GLADOS_COOKIE` | GLaDOS cookie | **Required** | `koa:sess=xxx; gld:sess=xxx` | Separate multiple accounts with `&&` or new lines |
-| `GLADOS_UA` | User-Agent used for check-in | Optional | `Mozilla/5.0 (Windows NT 10.0...)` | Defaults to a Windows Chrome UA; change it to match your login browser if device verification fails |
-| `PRIVACY_MODE` | Privacy mode | Optional | `true` | Default is `true`, masks the email |
+| Variable                     | Description                                | Required     | Example                            | Notes                                                                                                |
+| ---------------------------- | ------------------------------------------ | ------------ | ---------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| `GLADOS_COOKIE`              | GLaDOS cookie                              | **Required** | `gld:sess=xxx; gld:sess.sig=xxx`   | Full Cookie header; separate multiple accounts with `&&` or new lines                                |
+| `GLADOS_UA`                  | User-Agent used for check-in               | Optional     | `Mozilla/5.0 (Windows NT 10.0...)` | Defaults to a Windows Chrome UA; change it to match your login browser if device verification fails  |
+| `PRIVACY_MODE`               | Privacy mode                               | Optional     | `true`                             | Default is `true`, masks the email                                                                   |
+| `GLADOS_MAX_ATTEMPTS`        | Maximum check-in attempts                  | Optional     | `3`                                | Defaults to 3; each attempt gets a fresh challenge; authentication/device rejections are not retried |
+| `GLADOS_RETRY_DELAY_SECONDS` | Delay between transient failures (seconds) | Optional     | `60`                               | Defaults to 60; a non-negative integer                                                               |
+
+Check-in uses `glados.cloud`: fetch a one-time challenge, calculate its proof, wait 2.7 seconds, then submit the nonce/proof to the same origin. Invalid or expired challenges never fall back to the legacy flow. Transient failures such as network errors, HTTP 429/5xx and invalid responses are retried; unknown business errors are not. After a successful or explicitly repeated check-in, the script queries current points and remaining days. **Points are never automatically redeemed.** Info-query failures only produce warnings and do not invalidate a confirmed check-in; the check-in response balance is used as a fallback if available. The exit code is `0` when every account succeeds or has already checked in, and `1` when a Cookie is missing or any account fails. Rewards are determined by the server; a successful 1-point reward does not trigger retries.
 
 #### ⏰ Randomization Settings (shared by all scripts)
 
@@ -207,10 +211,10 @@ ql-script-hub/
 
 #### GLaDOS cookie
 
-1. Sign in to [GLaDOS](https://glados.rocks/) in a browser and open the check-in page
+1. Sign in to [GLaDOS](https://glados.cloud/) in a browser and open the check-in page
 2. Press `F12` → open the `Network` tab
-3. Click check-in and find the `checkin` request
-4. Copy the full `Cookie` header (including `koa:sess`, `gld:sess`, etc.) into `GLADOS_COOKIE`
+3. Refresh the page and find a successful `/api/user/status` request (no manual check-in needed)
+4. Copy the full `Cookie` header (must include `gld:sess` and `gld:sess.sig`) into `GLADOS_COOKIE`
 5. Separate multiple accounts with `&&` or new lines
 
 > ⚠️ GLaDOS verifies that the `User-Agent` matches the login device; a mismatch returns `device-mismatch` ("Automated check-in detected"). The script defaults to a Windows Chrome UA. If check-in reports device verification failure, set `GLADOS_UA` to the same User-Agent as your login browser (e.g. a macOS UA if you signed in on macOS).
